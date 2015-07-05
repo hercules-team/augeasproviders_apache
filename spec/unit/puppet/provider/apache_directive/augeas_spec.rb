@@ -45,7 +45,7 @@ describe provider_class do
         }
       }
 
-      inst.size.should == 49
+      inst.size.should == 51
       inst[0].should == {:args=>["${APACHE_LOCK_DIR}/accept.lock"], :name=>"LockFile", :ensure=>:present, :context=>""}
       inst[5].should == {:args=>["5"], :name=>"KeepAliveTimeout", :ensure=>:present, :context=>""}
       inst[30].should == {:args=>["150"], :context=>"IfModule[1]", :name=>"MaxClients", :ensure=>:present}
@@ -167,9 +167,23 @@ describe provider_class do
           aug.get("IfModule[arg='mpm_worker_module']/directive[.='StartServers']/arg").should == '2'
         end
       end
+
+      it "updating should update value" do
+        apply!(Puppet::Type.type(:apache_directive).new(
+          :name        => 'Options of Directory[arg="/"]',
+          :args_params => 0,
+          :args        => ['FollowSymLinks', 'Indexes'],
+          :ensure      => "present",
+          :target      => target,
+          :provider    => "augeas"
+        ))
+
+        aug_open(target, "Httpd.lns") do |aug|
+          aug.get('Directory[arg="/"]/directive[1]/arg').should == ['FollowSymLinks', 'Indexes']
+        end
+      end
     end
   end
-
 
   context "with broken file" do
     let(:tmptarget) { aug_fixture("broken") }
